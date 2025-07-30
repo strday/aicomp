@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIcomp</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: flex-start; /* Align to top vertically */
+            min-height: 100vh;
+            background-color: #e0f7fa; /* Light blue theme */
+            font-family: Arial, sans-serif;
+            overflow: hidden; /* Prevent body scroll */
+        }
+
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative; /* Keep relative for internal positioning if needed */
+        }
+
+        #header {
+            width: 100%;
+            background-color: #4fc3f7; /* Slightly darker light blue */
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        #main-window {
+            flex-grow: 1;
+            width: 100%;
+            padding: 10px;
+            overflow-y: auto;
+            box-sizing: border-box;
+            background-color: #f5f5f5;
+            word-wrap: break-word; /* Ensure long words break */
+            display: flex; /* Use flexbox for message alignment */
+            flex-direction: column;
+        }
+
+        .user-message {
+            align-self: flex-end; /* Align to the right within the flex container */
+            background-color: #D8F8D8; /* Light green background for bubble */
+            color: black; /* Black font color */
+            padding: 8px 12px;
+            border-radius: 15px;
+            margin-bottom: 5px;
+            max-width: 70%; /* Limit bubble width */
+            word-wrap: break-word; /* Ensure text wraps inside bubble */
+        }
+
+        .system-message {
+            align-self: flex-start; /* Align to the left within the flex container */
+            background-color: #E0E0E0; /* Light gray background for system bubble */
+            color: #333; /* Default color for system messages */
+            padding: 8px 12px;
+            border-radius: 15px;
+            margin-bottom: 5px;
+            max-width: 70%; /* Limit system message width */
+            word-wrap: break-word;
+        }
+
+        .status-message {
+            align-self: center; /* Center status messages */
+            font-size: 0.8em;
+            color: gray;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        #input-area {
+            width: 100%;
+            background-color: #ffffff;
+            box-sizing: border-box;
+            display: flex; /* Use flex to manage text-input height */
+            flex-direction: column;
+            flex-shrink: 0;
+            padding: 10px 0; /* Add vertical padding here instead of text-input */
+        }
+
+        #text-input {
+            width: calc(100% - 20px); /* Account for horizontal margin */
+            height: 100%; /* Make it fill the parent #input-area */
+            padding: 0 10px; /* Horizontal padding */
+            border: 1px solid #b3e5fc; /* Light blue border */
+            border-radius: 5px;
+            font-size: 1em;
+            resize: none; /* Disable manual resize */
+            box-sizing: border-box;
+            overflow: auto; /* Allow scrollbar if content exceeds height */
+            margin: 0 10px; /* Horizontal margin */
+        }
+
+        #buttons-container {
+            display: flex;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .button {
+            height: 100%; /* Will be set dynamically */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #81d4fa; /* Slightly darker light blue */
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            outline: none;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            border-left: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .button:first-child {
+            border-left: none;
+        }
+
+        .button:hover {
+            background-color: #4fc3f7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1; /* Bring to front on hover */
+        }
+
+        .button.active {
+            background-color: #03a9f4; /* Darker blue when active */
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 0, 0, 0.3);
+            transform: scale(1.05); /* Slight 3D effect */
+            z-index: 2; /* Ensure active button is on top */
+        }
+
+        /* Responsive sizing will be handled by JavaScript */
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <div id="header">
+            AIcomp
+        </div>
+        <div id="main-window">
+            <div class="system-message">Welcome to AIcomp! How can I help you today?</div>
+        </div>
+        <div id="input-area">
+            <textarea id="text-input" placeholder="Type your command here (max 240 characters)" maxlength="240"></textarea>
+        </div>
+        <div id="buttons-container">
+            <button class="button" id="chat-button">Chat</button>
+            <button class="button" id="exam-button">Exam</button>
+            <button class="button" id="project-button">Project</button>
+        </div>
+    </div>
+
+    <script>
+        const appContainer = document.getElementById('app-container');
+        const header = document.getElementById('header');
+        const mainWindow = document.getElementById('main-window');
+        const inputArea = document.getElementById('input-area');
+        const textInput = document.getElementById('text-input');
+        const buttonsContainer = document.getElementById('buttons-container');
+        const chatButton = document.getElementById('chat-button');
+        const examButton = document.getElementById('exam-button');
+        const projectButton = document.getElementById('project-button');
+
+        // --- IMPORTANT: PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE ---
+        // Go to your Google Sheet > Extensions > Apps Script.
+        // Deploy > New deployment > Select type: Web app > Execute as: Me > Who has access: Anyone.
+        // Copy the "Web app URL" and paste it below.
+        const GOOGLE_SHEET_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyiBSY2tyXPLwSDNX0ca0Udq0USFsWnLfaLiKWIDcuga4lzPGPRPXypwilbiiJywLL6sQ/exec';
+        // -----------------------------------------------------------------
+
+        const HEADER_HEIGHT_RATIO = 0.12;
+        const BUTTONS_HEIGHT_RATIO = 0.12;
+        const INPUT_HEIGHT_RATIO_NORMAL = 0.12;
+        const INPUT_HEIGHT_RATIO_EXPANDED = 0.24;
+        const ASPECT_RATIO = 2 / 3; // width:height
+
+        let currentInputHeightRatio = INPUT_HEIGHT_RATIO_NORMAL;
+        let isInputExpanded = false;
+        let currentActiveButtonId = 'chat-button'; // Keep track of the currently active button
+
+        // Store content for each section
+        const contentStates = {
+            'chat-button': '<div class="system-message">Welcome to AIcomp! How can I help you today?</div>',
+            'exam-button': '<div class="system-message">Research help you with collecting up to date data, doing deep analysis, measuring strengths and weaknesses, giving idea for potential solutions or actions, etc.</div>',
+            'project-button': '<div class="system-message">Agent will do the work for you by automating use of tools available 24/7.</div>'
+        };
+
+        // Function to get or generate a unique user ID for this browser
+        function getOrCreateUserId() {
+            let userId = localStorage.getItem('aicomp_userId');
+            if (!userId) {
+                userId = 'user_' + crypto.randomUUID().substring(0, 8); // Simple unique ID
+                localStorage.setItem('aicomp_userId', userId);
+            }
+            return userId;
+        }
+
+        function displayStatusMessage(message, type = 'info') {
+            const statusElement = document.createElement('div');
+            statusElement.classList.add('status-message');
+            if (type === 'error') {
+                statusElement.style.color = 'red';
+            } else if (type === 'success') {
+                statusElement.style.color = 'green';
+            }
+            statusElement.textContent = message;
+            mainWindow.appendChild(statusElement);
+            mainWindow.scrollTop = mainWindow.scrollHeight; // Scroll to bottom
+            setTimeout(() => {
+                statusElement.remove(); // Remove after a few seconds
+            }, 5000);
+        }
+
+        // Function to display Gemini's response
+        function displayGeminiResponse(response) {
+            const geminiMessageElement = document.createElement('div');
+            geminiMessageElement.classList.add('system-message'); // Use system-message class for Gemini's response
+            geminiMessageElement.textContent = response;
+            mainWindow.appendChild(geminiMessageElement);
+            mainWindow.scrollTop = mainWindow.scrollHeight; // Scroll to bottom
+        }
+
+        function resizeApp() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+
+            let appWidth, appHeight;
+
+            // Calculate based on screen width
+            appWidth = screenWidth * 0.9; // Use 90% of screen width for initial calculation
+            appHeight = appWidth / ASPECT_RATIO;
+
+            // If calculated height exceeds screen height, adjust based on screen height
+            if (appHeight > screenHeight * 0.9) { // Use 90% of screen height
+                appHeight = screenHeight * 0.9;
+                appWidth = appHeight * ASPECT_RATIO;
+            }
+
+            // Ensure app does not exceed screen dimensions
+            if (appWidth > screenWidth) {
+                appWidth = screenWidth;
+                appHeight = appWidth / ASPECT_RATIO;
+            }
+            if (appHeight > screenHeight) {
+                appHeight = screenHeight;
+                appWidth = appHeight * ASPECT_RATIO;
+            }
+
+            appContainer.style.width = `${appWidth}px`;
+            appContainer.style.height = `${appHeight}px`;
+
+            // Set heights for individual elements
+            header.style.height = `${appHeight * HEADER_HEIGHT_RATIO}px`;
+            buttonsContainer.style.height = `${appHeight * BUTTONS_HEIGHT_RATIO}px`;
+            
+            // Adjust input area height based on its state
+            inputArea.style.height = `${appHeight * currentInputHeightRatio}px`;
+
+            // Calculate main window height
+            // We need to account for the padding on inputArea when calculating remaining space
+            const inputAreaPadding = parseFloat(getComputedStyle(inputArea).paddingTop) + parseFloat(getComputedStyle(inputArea).paddingBottom);
+            mainWindow.style.height = `${appHeight - (parseFloat(header.style.height) + parseFloat(inputArea.style.height) + parseFloat(buttonsContainer.style.height) + inputAreaPadding)}px`;
+
+            // Set button widths
+            chatButton.style.width = `${appWidth * 0.33}px`;
+            examButton.style.width = `${appWidth * 0.34}px`;
+            projectButton.style.width = `${appWidth * 0.33}px`;
+
+            // Align to top (vertical)
+            appContainer.style.top = '0';
+            // Horizontal centering is handled by body's flexbox justify-content: center
+            appContainer.style.left = ''; // Remove explicit left positioning
+        }
+
+        function setActiveButton(button) {
+            // Save current main window content before changing
+            contentStates[currentActiveButtonId] = mainWindow.innerHTML;
+
+            const buttons = [chatButton, examButton, projectButton];
+            buttons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            currentActiveButtonId = button.id; // Update active button ID
+
+            // Load content for the newly active button
+            mainWindow.innerHTML = contentStates[currentActiveButtonId];
+            mainWindow.scrollTop = mainWindow.scrollHeight; // Scroll to bottom of loaded content
+        }
+
+        textInput.addEventListener('focus', () => {
+            if (!isInputExpanded) {
+                currentInputHeightRatio = INPUT_HEIGHT_RATIO_EXPANDED;
+                isInputExpanded = true;
+                buttonsContainer.style.display = 'none'; // Hide buttons
+                resizeApp(); // Recalculate heights
+            }
+        });
+
+        textInput.addEventListener('blur', () => {
+            // Only shrink if there's no text
+            if (textInput.value.trim() === '') {
+                currentInputHeightRatio = INPUT_HEIGHT_RATIO_NORMAL;
+                isInputExpanded = false;
+                buttonsContainer.style.display = 'flex'; // Show buttons
+                resizeApp(); // Recalculate heights
+            }
+        });
+
+        textInput.addEventListener('keydown', async (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) { // Allow Shift+Enter for new line
+                event.preventDefault(); // Prevent default Enter behavior (new line)
+                const message = textInput.value.trim();
+                if (message) {
+                    // Display user message immediately
+                    const userMessageElement = document.createElement('div');
+                    userMessageElement.classList.add('user-message');
+                    userMessageElement.textContent = message;
+                    mainWindow.appendChild(userMessageElement);
+                    mainWindow.scrollTop = mainWindow.scrollHeight; // Scroll to bottom
+
+                    // Prepare data for Google Sheet
+                    const autoId = crypto.randomUUID();
+                    const timestamp = new Date().toISOString();
+                    const userId = getOrCreateUserId(); // Get or create user ID
+
+                    const dataToSend = {
+                        id: autoId,
+                        timestamp: timestamp,
+                        userId: userId,
+                        message: message
+                    };
+
+                    // Send data to Google Sheet via Apps Script
+                    if (GOOGLE_SHEET_WEB_APP_URL && GOOGLE_SHEET_WEB_APP_URL !== 'YOUR_GOOGLE_SHEET_WEB_APP_URL_HERE') {
+                        try {
+                            // Indicate sending
+                            textInput.placeholder = "Sending to AIcomp...";
+                            textInput.disabled = true;
+
+                            const response = await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'text/plain;charset=utf-8', // Sending as plain text to avoid CORS preflight issues
+                                },
+                        //         headers: {
+                        //             'Content-Type': 'application/json', // Set content type to JSON
+                        //         },
+                                body: JSON.stringify(dataToSend)
+                            });
+
+                            const result = await response.json(); // Parse the JSON response
+
+                            if (result.status === 'success') {
+                                displayStatusMessage(result.message, 'success');
+                                if (result.geminiResponse) {
+                                    displayGeminiResponse(result.geminiResponse); // Display Gemini's response
+                                }
+                            } else {
+                                displayStatusMessage(result.message, 'error');
+                                if (result.geminiResponse) {
+                                    displayGeminiResponse("Error: " + result.geminiResponse); // Display error from Gemini
+                                }
+                            }
+
+                        } catch (error) {
+                            console.error('Error sending message to Google Sheet:', error);
+                            displayStatusMessage(`Network error or invalid response: ${error.message}`, 'error');
+                            displayGeminiResponse("Apologies, I encountered a network error or an issue processing your request.");
+                        } finally {
+                            textInput.placeholder = "Type your command here (max 240 characters)";
+                            textInput.disabled = false;
+                            // Update the contentStates for chat-button after all messages are displayed
+                            contentStates[currentActiveButtonId] = mainWindow.innerHTML;
+                        }
+                    } else {
+                        console.warn('Google Sheet Web App URL not configured. Message not sent to sheet.');
+                        displayStatusMessage('Google Sheet integration not configured. Message not sent to sheet.', 'info');
+                        displayGeminiResponse("Please configure the Google Sheet Web App URL in the script to enable full functionality.");
+                        // Update the contentStates for chat-button even if not sent to sheet
+                        contentStates[currentActiveButtonId] = mainWindow.innerHTML;
+                    }
+
+                    textInput.value = ''; // Clear input
+                    
+                    // Shrink textbox after sending message if it was expanded
+                    currentInputHeightRatio = INPUT_HEIGHT_RATIO_NORMAL;
+                    isInputExpanded = false;
+                    buttonsContainer.style.display = 'flex'; // Show buttons
+                    resizeApp(); // Recalculate heights
+                    textInput.blur(); // Remove focus
+                }
+            }
+        });
+
+        chatButton.addEventListener('click', () => setActiveButton(chatButton));
+        examButton.addEventListener('click', () => setActiveButton(examButton));
+        projectButton.addEventListener('click', () => setActiveButton(projectButton));
+
+        // Initial resize and set active button
+        resizeApp();
+        setActiveButton(chatButton); // Set chat as active by default
+        window.addEventListener('resize', resizeApp);
+    </script>
+</body>
+</html>
