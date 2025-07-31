@@ -229,16 +229,37 @@
             setTimeout(() => {
                 statusElement.remove(); // Remove after a few seconds
             }, 5000);
+        } 
+
+        // Function to display Gemini's response with typewriter effect
+        function displayGeminiResponse(response) {
+            const geminiMessageElement = document.createElement('div');
+            geminiMessageElement.classList.add('system-message');
+            mainWindow.appendChild(geminiMessageElement); // Append empty element first
+
+            let i = 0;
+            const typeWriter = () => {
+                if (i < response.length) {
+                    geminiMessageElement.textContent += response.charAt(i);
+                    mainWindow.scrollTop = mainWindow.scrollHeight; // Keep scrolling to bottom
+                    i++;
+                    setTimeout(typeWriter, TYPING_SPEED);
+                } else {
+                    // After typing is complete, update the contentStates
+                    contentStates[currentActiveButtonId] = mainWindow.innerHTML;
+                }
+            };
+            typeWriter();
         }
 
         // Function to display Gemini's response
         function displayGeminiResponse(response) {
-            const geminiMessageElement = document.createElement('div');
-            geminiMessageElement.classList.add('system-message'); // Use system-message class for Gemini's response
-            geminiMessageElement.textContent = response;
-            mainWindow.appendChild(geminiMessageElement);
-            mainWindow.scrollTop = mainWindow.scrollHeight; // Scroll to bottom
-        }
+        //     const geminiMessageElement = document.createElement('div');
+        //     geminiMessageElement.classList.add('system-message'); // Use system-message class for Gemini's response
+        //     geminiMessageElement.textContent = response;
+        //     mainWindow.appendChild(geminiMessageElement);
+        //     mainWindow.scrollTop = mainWindow.scrollHeight; // Scroll to bottom
+        // }
 
         function resizeApp() {
             const screenWidth = window.innerWidth;
@@ -368,7 +389,22 @@
                             });
 
                             const result = await response.json(); // Parse the JSON response
-
+                            if (result.status === 'success') {
+                                displayStatusMessage(result.message, 'success');
+                                if (result.geminiResponse) {
+                                    displayGeminiResponse(result.geminiResponse); // Display Gemini's response with animation
+                                }
+                            } else {
+                                displayStatusMessage(result.message, 'error');
+                                if (result.geminiResponse) {
+                                    // If there's a Gemini response even on error, display it without animation
+                                    const errorGeminiMessage = document.createElement('div');
+                                    errorGeminiMessage.classList.add('system-message');
+                                    errorGeminiMessage.textContent = "Error: " + result.geminiResponse;
+                                    mainWindow.appendChild(errorGeminiMessage);
+                                    mainWindow.scrollTop = mainWindow.scrollHeight;
+                                }
+                            }
                             if (result.status === 'success') {
                                 displayStatusMessage(result.message, 'success');
                                 if (result.geminiResponse) {
