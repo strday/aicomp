@@ -193,6 +193,7 @@
         const INPUT_HEIGHT_RATIO_NORMAL = 0.12;
         const INPUT_HEIGHT_RATIO_EXPANDED = 0.24;
         const ASPECT_RATIO = 2 / 3; // width:height
+        const TYPING_SPEED = 24; // Milliseconds per character for typewriter effect
 
         let currentInputHeightRatio = INPUT_HEIGHT_RATIO_NORMAL;
         let isInputExpanded = false;
@@ -253,7 +254,7 @@
         }
 
         // Function to display Gemini's response
-        function displayGeminiResponse(response) {
+        // function displayGeminiResponse(response) {
         //     const geminiMessageElement = document.createElement('div');
         //     geminiMessageElement.classList.add('system-message'); // Use system-message class for Gemini's response
         //     geminiMessageElement.textContent = response;
@@ -382,9 +383,6 @@
                                 headers: {
                                     'Content-Type': 'text/plain;charset=utf-8', // Sending as plain text to avoid CORS preflight issues
                                 },
-                        //         headers: {
-                        //             'Content-Type': 'application/json', // Set content type to JSON
-                        //         },
                                 body: JSON.stringify(dataToSend)
                             });
 
@@ -404,17 +402,17 @@
                                     mainWindow.appendChild(errorGeminiMessage);
                                     mainWindow.scrollTop = mainWindow.scrollHeight;
                                 }
-                            }
-                            if (result.status === 'success') {
-                                displayStatusMessage(result.message, 'success');
-                                if (result.geminiResponse) {
-                                    displayGeminiResponse(result.geminiResponse); // Display Gemini's response
-                                }
-                            } else {
-                                displayStatusMessage(result.message, 'error');
-                                if (result.geminiResponse) {
-                                    displayGeminiResponse("Error: " + result.geminiResponse); // Display error from Gemini
-                                }
+                            // }
+                            // if (result.status === 'success') {
+                            //     displayStatusMessage(result.message, 'success');
+                            //     if (result.geminiResponse) {
+                            //         displayGeminiResponse(result.geminiResponse); // Display Gemini's response
+                            //     }
+                            // } else {
+                            //     displayStatusMessage(result.message, 'error');
+                            //     if (result.geminiResponse) {
+                            //         displayGeminiResponse("Error: " + result.geminiResponse); // Display error from Gemini
+                            //     }
                             }
 
                         } catch (error) {
